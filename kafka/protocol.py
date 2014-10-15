@@ -171,6 +171,9 @@ class KafkaProtocol(object):
     #   Public API   #
     ##################
 
+    # used while sending msgs. takes a list of producerequests and
+    # generate a message (which includes bunch of headers n stuff as well).
+    # finally returns a byte array of len(msg),msg
     @classmethod
     def encode_produce_request(cls, client_id, correlation_id,
                                payloads=None, acks=1, timeout=1000):
@@ -196,12 +199,15 @@ class KafkaProtocol(object):
         message = cls._encode_message_header(client_id, correlation_id,
                                              KafkaProtocol.PRODUCE_KEY)
 
+        # len(grouped_payloads) = no. of diff topics
         message += struct.pack('>hii', acks, timeout, len(grouped_payloads))
 
         for topic, topic_payloads in grouped_payloads.items():
+            # len(topic_payloads) = no. of partition for that topic
             message += struct.pack('>h%dsi' % len(topic),
                                    len(topic), topic, len(topic_payloads))
 
+            # payload = ["topic", "partition", "messages"]
             for partition, payload in topic_payloads.items():
                 msg_set = KafkaProtocol._encode_message_set(payload.messages)
                 message += struct.pack('>ii%ds' % len(msg_set), partition,
@@ -209,6 +215,10 @@ class KafkaProtocol(object):
 
         return struct.pack('>i%ds' % len(message), len(message), message)
 
+
+    # when a producer sends some data, there is a response from the server
+    # received using conn.recv. This function is used to decode that response.
+    # it returns a list of ProduceResponse (topic, partition, error, offset)
     @classmethod
     def decode_produce_response(cls, data):
         """
@@ -254,11 +264,13 @@ class KafkaProtocol(object):
                                              KafkaProtocol.FETCH_KEY)
 
         # -1 is the replica id
+        # len(grouped_payloads) = no. of diff topics
         message += struct.pack('>iiii', -1, max_wait_time, min_bytes,
                                len(grouped_payloads))
 
         for topic, topic_payloads in grouped_payloads.items():
             message += write_short_string(topic)
+            # len(topic_payloads) = no. of partition for that topic
             message += struct.pack('>i', len(topic_payloads))
             for partition, payload in topic_payloads.items():
                 message += struct.pack('>iqi', partition, payload.offset,

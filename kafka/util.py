@@ -7,6 +7,10 @@ from kafka.common import BufferUnderflowError
 
 
 def write_int_string(s):
+    """
+    convert a string into a byte array
+    returns len(s), s in bytes
+    """
     if s is None:
         return struct.pack('>i', -1)
     else:
@@ -40,6 +44,10 @@ def read_short_string(data, cur):
 
 
 def read_int_string(data, cur):
+    """
+    reads a byte array 'data' from the cur position.
+    the first 4 bytes denotes the size of the data followed by the data
+    """
     if len(data) < cur + 4:
         raise BufferUnderflowError(
             "Not enough data left to read string len (%d < %d)" %
@@ -69,7 +77,7 @@ def relative_unpack(fmt, data, cur):
 def group_by_topic_and_partition(tuples):
     out = collections.defaultdict(dict)
     for t in tuples:
-        out[t.topic][t.partition] = t
+        out[t.topic][t.partition] = t   #shoudn't this be append?
     return out
 
 

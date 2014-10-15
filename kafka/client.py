@@ -109,7 +109,7 @@ class KafkaClient(object):
         Params
         ======
         payloads: list of object-like entities with a topic and
-                  partition attribute
+                  partition attribute (ProduceRequests)
         encode_fn: a method to encode the list of payloads to a request body,
                    must accept client_id, correlation_id, and payloads as
                    keyword arguments
@@ -269,7 +269,7 @@ class KafkaClient(object):
     def send_produce_request(self, payloads=[], acks=1, timeout=1000,
                              fail_on_error=True, callback=None):
         """
-        Encode and send some ProduceRequests
+        Encode and send some ProduceRequests -> (topic, patition, messages)
 
         ProduceRequests will be grouped by (topic, partition) and then
         sent to a specific broker. Output is a list of responses in the
